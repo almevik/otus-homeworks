@@ -1,4 +1,4 @@
-module github.com/almevik/hw01_hello_now
+module github.com/almevik/otus-homeworks/hw01_hello_now
 
 go 1.15
 
