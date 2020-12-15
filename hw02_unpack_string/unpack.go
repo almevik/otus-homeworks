@@ -2,83 +2,115 @@ package hw02_unpack_string //nolint:golint,stylecheck
 
 import (
 	"errors"
-	"fmt"
-	"log"
+	"strconv"
+	"strings"
 	"unicode"
 )
+
+type runeType int
+
+const (
+	symbolType runeType = iota
+	countType
+	escapeSymbolType
+	escapeType
+	errorType
+	emptyType
+)
+
+const escapeRune rune = '\\'
 
 var ErrInvalidString = errors.New("invalid string")
 
 func Unpack(str string) (string, error) {
-	// Place your code here
-	//unicode.IsDigit
-	//strings.Builder
-	//strings.Repeat
-	//strconv.Atoi
-	var res string
+	var strBuilder strings.Builder
 
-	for _, char := range []rune(str) {
-		res = res + string(char)
+	runes := []rune(str)
 
-		// Если встретили цифру
-		if unicode.IsDigit(char) {
-
-		}
-
-		if !unicode.IsDigit(char) {
-
-		}
+	// Если пустая строка
+	if len(runes) == 0 {
+		return "", nil
 	}
 
-	return res, nil
+	var prevRune rune
+	prevType := emptyType
+
+	for _, curRune := range runes {
+		currentType := defineRuneType(prevRune, curRune, prevType)
+		prevType = currentType
+
+		switch {
+		case currentType == symbolType:
+			strBuilder.WriteRune(curRune)
+
+			break
+
+		case currentType == escapeSymbolType:
+
+		case prevType == escapeSymbolType:
+			if currentType == escapeSymbolType || currentType == symbolType || currentType == countType {
+				strBuilder.WriteRune(curRune)
+				prevType = emptyType
+			}
+
+			break
+
+		case currentType == countType:
+			if curRune == '0' {
+				var subStrBuilder strings.Builder
+
+				runesSubStr := []rune(strBuilder.String())[:strBuilder.Len()-1]
+
+				for _, runeSubStr := range runesSubStr {
+					subStrBuilder.WriteRune(runeSubStr)
+				}
+
+				// Очень дурацкое решение, уверен можно лучше написать
+				strBuilder.Reset()
+				for _, newRune := range []rune(subStrBuilder.String()) {
+					strBuilder.WriteRune(newRune)
+				}
+
+				break
+			}
+
+			count, err := strconv.Atoi(string(curRune))
+
+			if err != nil {
+				panic("Can't convert countRune to int")
+			}
+
+			// count - 1 чтобы учитывать уже имеющийся символ
+			strBuilder.WriteString(strings.Repeat(string(prevRune), count - 1))
+
+			break
+
+		case currentType == errorType:
+			return "", ErrInvalidString
+		}
+
+		prevRune = curRune
+	}
+
+	return strBuilder.String(), nil
 }
 
-func itoa(i int) (s string) {
-	minus := ``
-	if i == 0 {
-		return "0"
-	}
-	if i < 0 {
-		i *= -1
-		minus = `-`
-	}
+func defineRuneType(prevRune rune, currentRune rune, prevType runeType) runeType {
+	isNumber := unicode.IsDigit(currentRune)
+	isPrevNumber := unicode.IsDigit(prevRune)
 
-	for i != 0 {
-		s = string('0'+i%10) + s
-		i = i / 10
-	}
-
-	return minus + s
-}
-
-func main() {
-	type pair struct {
-		input    string
-		expected string
-	}
-
-	test := []pair{
-		{"a4bc2d5e", "aaaabccddddde"},
-		{"abcd", "abcd"},
-		{"3abc", ""},
-		{"45", ""},
-		{"aaa10b", ""},
-		{"aaa0b", "aab"},
-		{"", ""},
-		{"d\n5abc", "d\n\n\n\n\nabc"},
-	}
-
-	for _, t := range test {
-		expected, err := Unpack(t.input)
-
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-
-		if expected == t.expected {
-			fmt.Printf("%s - %s\n", expected, t.expected, "OK")
-		} else {
-			fmt.Printf("%s - %s\n", expected, t.expected, "FAIL")
-		}
+	switch {
+	case prevType == emptyType && isNumber:
+		return errorType
+	case prevType != symbolType && isPrevNumber && isNumber:
+		return errorType
+	case (prevRune != escapeRune && isNumber) || (prevType == symbolType && isNumber):
+		return countType
+	case prevRune == escapeRune && currentRune == escapeRune && prevType == escapeType:
+		return symbolType
+	case prevType != escapeType && currentRune == escapeRune:
+		return escapeType
+	default:
+		return symbolType
 	}
 }
