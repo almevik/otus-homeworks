@@ -43,8 +43,6 @@ func Unpack(str string) (string, error) {
 		case currentType == symbolType:
 			strBuilder.WriteRune(curRune)
 
-			break
-
 		case currentType == escapeSymbolType:
 
 		case prevType == escapeSymbolType:
@@ -53,23 +51,12 @@ func Unpack(str string) (string, error) {
 				prevType = emptyType
 			}
 
-			break
-
 		case currentType == countType:
 			if curRune == '0' {
-				var subStrBuilder strings.Builder
+				subStr := getZeroCountStr(strBuilder.String())
 
-				runesSubStr := []rune(strBuilder.String())[:strBuilder.Len()-1]
-
-				for _, runeSubStr := range runesSubStr {
-					subStrBuilder.WriteRune(runeSubStr)
-				}
-
-				// Очень дурацкое решение, уверен можно лучше написать
 				strBuilder.Reset()
-				for _, newRune := range []rune(subStrBuilder.String()) {
-					strBuilder.WriteRune(newRune)
-				}
+				strBuilder.WriteString(subStr)
 
 				break
 			}
@@ -81,9 +68,7 @@ func Unpack(str string) (string, error) {
 			}
 
 			// count - 1 чтобы учитывать уже имеющийся символ
-			strBuilder.WriteString(strings.Repeat(string(prevRune), count - 1))
-
-			break
+			strBuilder.WriteString(strings.Repeat(string(prevRune), count-1))
 
 		case currentType == errorType:
 			return "", ErrInvalidString
@@ -95,6 +80,20 @@ func Unpack(str string) (string, error) {
 	return strBuilder.String(), nil
 }
 
+// getZeroCountStr возвращает подстроку без последнего символа.
+func getZeroCountStr(strCur string) string {
+	var subStrBuilder strings.Builder
+
+	runesSubStr := []rune(strCur)[:len(strCur)-1]
+
+	for _, runeSubStr := range runesSubStr {
+		subStrBuilder.WriteRune(runeSubStr)
+	}
+
+	return subStrBuilder.String()
+}
+
+// defineRuneType определяет тип руны.
 func defineRuneType(prevRune rune, currentRune rune, prevType runeType) runeType {
 	isNumber := unicode.IsDigit(currentRune)
 	isPrevNumber := unicode.IsDigit(prevRune)
