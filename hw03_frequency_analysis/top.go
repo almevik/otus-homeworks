@@ -28,6 +28,8 @@ func Top10(str string) []string {
 		sb.WriteRune(r)
 	}
 
+	words[sb.String()] = words[sb.String()] + 1
+
 	var wordsSlice []wordStruct
 
 	for word, count := range words {
@@ -39,8 +41,13 @@ func Top10(str string) []string {
 	})
 
 	var top10 []string
+	length := 10
 
-	for _, value := range wordsSlice[:10] {
+	if len(wordsSlice) < 10 {
+		length = len(wordsSlice)
+	}
+
+	for _, value := range wordsSlice[:length] {
 		top10 = append(top10, value.word)
 	}
 
