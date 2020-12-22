@@ -78,3 +78,41 @@ func TestUnpackWithEscape(t *testing.T) {
 		require.Equal(t, tst.expected, result)
 	}
 }
+
+func TestUnpackWithHiddenSymbols(t *testing.T) {
+	for _, tst := range [...]test{
+		{
+			input:    `dadw3d\nddd`,
+			expected: ``,
+			err:      ErrInvalidString,
+		},
+		{
+			input:    `dw3d\td`,
+			expected: ``,
+			err:      ErrInvalidString,
+		},
+	} {
+		result, err := Unpack(tst.input)
+		require.Equal(t, tst.err, err)
+		require.Equal(t, tst.expected, result)
+	}
+}
+
+func TestUnpackWithSpaces(t *testing.T) {
+	for _, tst := range [...]test{
+		{
+			input:    `da\ 3fds`,
+			expected: "",
+			err:      ErrInvalidString,
+		},
+		{
+			input:    " da3fds",
+			expected: "",
+			err:      ErrInvalidString,
+		},
+	} {
+		result, err := Unpack(tst.input)
+		require.Equal(t, tst.err, err)
+		require.Equal(t, tst.expected, result)
+	}
+}

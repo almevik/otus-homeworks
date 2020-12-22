@@ -19,6 +19,9 @@ const (
 )
 
 const escapeRune rune = '\\'
+const lineBreakerRune rune = 'n'
+const tabRune rune = 't'
+const spaceRune rune = ' '
 
 var ErrInvalidString = errors.New("invalid string")
 
@@ -82,15 +85,14 @@ func Unpack(str string) (string, error) {
 
 // getZeroCountStr возвращает подстроку без последнего символа.
 func getZeroCountStr(strCur string) string {
-	var subStrBuilder strings.Builder
+	length := len(strCur) - 1
 
-	runesSubStr := []rune(strCur)[:len(strCur)-1]
-
-	for _, runeSubStr := range runesSubStr {
-		subStrBuilder.WriteRune(runeSubStr)
+	// Проверка может и не нужна, т.к. в функцию мы попадаем только если тип countType, а он не может быть первым символом
+	if length < 1 {
+		return ""
 	}
 
-	return subStrBuilder.String()
+	return string([]rune(strCur)[:length])
 }
 
 // defineRuneType определяет тип руны.
@@ -99,7 +101,10 @@ func defineRuneType(prevRune rune, currentRune rune, prevType runeType) runeType
 	isPrevNumber := unicode.IsDigit(prevRune)
 
 	switch {
-	case prevType == emptyType && isNumber:
+	case (prevType == emptyType && isNumber) ||
+		(prevRune == escapeRune && currentRune == lineBreakerRune) ||
+		(prevRune == escapeRune && currentRune == tabRune) ||
+		(currentRune == spaceRune):
 		return errorType
 	case prevType != symbolType && isPrevNumber && isNumber:
 		return errorType
