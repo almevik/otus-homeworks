@@ -18,15 +18,55 @@ const (
 	emptyType
 )
 
-const escapeRune rune = '\\'
-const lineBreakerRune rune = 'n'
-const tabRune rune = 't'
-const spaceRune rune = ' '
+const (
+	escapeRune      rune = '\\'
+	lineBreakerRune rune = 'n'
+	tabRune         rune = 't'
+	spaceRune       rune = ' '
+)
+
+type strStruct struct {
+	strBuilder strings.Builder
+	prevRune   rune
+	prevType   runeType
+	curRune    rune
+	curType    runeType
+}
 
 var ErrInvalidString = errors.New("invalid string")
 
+// Записывает символ в слайс строки.
+func (strStruct *strStruct) write() {
+	switch {
+	case strStruct.curType == symbolType:
+		strStruct.strBuilder.WriteRune(strStruct.curRune)
+
+	case strStruct.prevType == escapeSymbolType:
+		if strStruct.curType == escapeSymbolType || strStruct.curType == symbolType || strStruct.curType == countType {
+			strStruct.strBuilder.WriteRune(strStruct.curRune)
+			strStruct.curType = emptyType
+		}
+
+	case strStruct.curType == countType:
+		if strStruct.curRune == '0' {
+			subStr := getZeroCountStr(strStruct.strBuilder.String())
+
+			strStruct.strBuilder.Reset()
+			strStruct.strBuilder.WriteString(subStr)
+		} else {
+			count, _ := strconv.Atoi(string(strStruct.curRune))
+
+			// count - 1 чтобы учитывать уже имеющийся символ
+			strStruct.strBuilder.WriteString(strings.Repeat(string(strStruct.prevRune), count-1))
+		}
+	}
+
+	strStruct.prevRune = strStruct.curRune
+	strStruct.prevType = strStruct.curType
+}
+
 func Unpack(str string) (string, error) {
-	var strBuilder strings.Builder
+	var strStruct strStruct
 
 	runes := []rune(str)
 
@@ -35,52 +75,20 @@ func Unpack(str string) (string, error) {
 		return "", nil
 	}
 
-	var prevRune rune
-	prevType := emptyType
+	strStruct.prevType = emptyType
 
 	for _, curRune := range runes {
-		currentType := defineRuneType(prevRune, curRune, prevType)
-		prevType = currentType
+		strStruct.curRune = curRune
+		strStruct.curType = defineRuneType(strStruct)
 
-		switch {
-		case currentType == symbolType:
-			strBuilder.WriteRune(curRune)
-
-		case currentType == escapeSymbolType:
-
-		case prevType == escapeSymbolType:
-			if currentType == escapeSymbolType || currentType == symbolType || currentType == countType {
-				strBuilder.WriteRune(curRune)
-				prevType = emptyType
-			}
-
-		case currentType == countType:
-			if curRune == '0' {
-				subStr := getZeroCountStr(strBuilder.String())
-
-				strBuilder.Reset()
-				strBuilder.WriteString(subStr)
-
-				break
-			}
-
-			count, err := strconv.Atoi(string(curRune))
-
-			if err != nil {
-				panic("Can't convert countRune to int")
-			}
-
-			// count - 1 чтобы учитывать уже имеющийся символ
-			strBuilder.WriteString(strings.Repeat(string(prevRune), count-1))
-
-		case currentType == errorType:
+		if strStruct.curType == errorType {
 			return "", ErrInvalidString
 		}
 
-		prevRune = curRune
+		strStruct.write()
 	}
 
-	return strBuilder.String(), nil
+	return strStruct.strBuilder.String(), nil
 }
 
 // getZeroCountStr возвращает подстроку без последнего символа.
@@ -93,25 +101,37 @@ func getZeroCountStr(strCur string) string {
 }
 
 // defineRuneType определяет тип руны.
-func defineRuneType(prevRune rune, currentRune rune, prevType runeType) runeType {
-	isNumber := unicode.IsDigit(currentRune)
-	isPrevNumber := unicode.IsDigit(prevRune)
+func defineRuneType(strStruct strStruct) runeType {
+	isNumber := unicode.IsDigit(strStruct.curRune)
+	isPrevNumber := unicode.IsDigit(strStruct.prevRune)
 
-	switch {
-	case (prevType == emptyType && isNumber) ||
-		(prevRune == escapeRune && currentRune == lineBreakerRune) ||
-		(prevRune == escapeRune && currentRune == tabRune) ||
-		(currentRune == spaceRune):
+	if isErrorType(strStruct, isNumber, isPrevNumber) {
 		return errorType
-	case prevType != symbolType && isPrevNumber && isNumber:
-		return errorType
-	case (prevRune != escapeRune && isNumber) || (prevType == symbolType && isNumber):
-		return countType
-	case prevRune == escapeRune && currentRune == escapeRune && prevType == escapeType:
-		return symbolType
-	case prevType != escapeType && currentRune == escapeRune:
-		return escapeType
-	default:
-		return symbolType
 	}
+
+	if isCountType(strStruct, isNumber) {
+		return countType
+	}
+
+	if isEscapeType(strStruct) {
+		return escapeType
+	}
+
+	return symbolType
+}
+
+func isErrorType(strStruct strStruct, isNumber bool, isPrevNumber bool) bool {
+	return (strStruct.prevType == emptyType && isNumber) ||
+		(strStruct.prevRune == escapeRune && strStruct.curRune == lineBreakerRune) ||
+		(strStruct.prevRune == escapeRune && strStruct.curRune == tabRune) ||
+		(strStruct.curRune == spaceRune) ||
+		(strStruct.prevType != symbolType && isPrevNumber && isNumber)
+}
+
+func isCountType(strStruct strStruct, isNumber bool) bool {
+	return (strStruct.prevRune != escapeRune && isNumber) || (strStruct.prevType == symbolType && isNumber)
+}
+
+func isEscapeType(strStruct strStruct) bool {
+	return strStruct.prevType != escapeType && strStruct.curRune == escapeRune
 }
