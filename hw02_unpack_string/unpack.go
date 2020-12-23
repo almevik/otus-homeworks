@@ -26,11 +26,11 @@ const (
 )
 
 type strStruct struct {
-	strBuilder strings.Builder
-	prevRune   rune
-	prevType   runeType
 	curRune    rune
+	prevRune   rune
 	curType    runeType
+	prevType   runeType
+	strBuilder strings.Builder
 }
 
 var ErrInvalidString = errors.New("invalid string")
