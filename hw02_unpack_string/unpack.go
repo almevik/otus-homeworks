@@ -85,14 +85,11 @@ func Unpack(str string) (string, error) {
 
 // getZeroCountStr возвращает подстроку без последнего символа.
 func getZeroCountStr(strCur string) string {
-	length := len(strCur) - 1
-
-	// Проверка может и не нужна, т.к. в функцию мы попадаем только если тип countType, а он не может быть первым символом
-	if length < 1 {
+	if len(strCur) == 0 {
 		return ""
 	}
 
-	return string([]rune(strCur)[:length])
+	return strCur[:len(strCur)-1]
 }
 
 // defineRuneType определяет тип руны.

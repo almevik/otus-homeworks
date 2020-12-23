@@ -52,6 +52,19 @@ func TestUnpack(t *testing.T) {
 	}
 }
 
+func TestUnpackUtf8(t *testing.T) {
+	for _, tst := range [...]test{
+		{
+			input:    "в4мм2и5г",
+			expected: "ввввмммиииииг",
+		},
+	} {
+		result, err := Unpack(tst.input)
+		require.Equal(t, tst.err, err)
+		require.Equal(t, tst.expected, result)
+	}
+}
+
 func TestUnpackWithEscape(t *testing.T) {
 	//t.Skip() // NeedRemove if task with asterisk completed
 
