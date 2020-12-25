@@ -55,13 +55,20 @@ func (rI *runeIterator) defineRuneType() {
 
 	if rI.isErrorType(isNumber, isPrevNumber) {
 		rI.curType = errorType
-	} else if rI.isCountType(isNumber) {
-		rI.curType = countType
-	} else if rI.isEscapeType() {
-		rI.curType = escapeType
-	} else {
-		rI.curType = symbolType
+		return
 	}
+
+	if rI.isCountType(isNumber) {
+		rI.curType = countType
+		return
+	}
+
+	if rI.isEscapeType() {
+		rI.curType = escapeType
+		return
+	}
+
+	rI.curType = symbolType
 }
 
 type strStruct struct {
