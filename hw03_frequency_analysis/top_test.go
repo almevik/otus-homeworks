@@ -7,7 +7,7 @@ import (
 )
 
 // Change to true if needed
-var taskWithAsteriskIsCompleted = true
+var taskWithAsteriskIsCompleted = false
 
 var text = `Как видите, он  спускается  по  лестнице  вслед  за  своим
 	другом   Кристофером   Робином,   головой   вниз,  пересчитывая
@@ -73,22 +73,17 @@ func TestTop10(t *testing.T) {
 	})
 
 	t.Run("positive test low length", func(t *testing.T) {
-		if taskWithAsteriskIsCompleted {
-			expected := []string{"привет", "один", "два", "три", "четыре", "пять"}
-			require.Subset(t, expected, Top10(textLowLength))
-		} else {
-			expected := []string{"привет", "один", "два", "три", "четыре", "пять"}
-			require.ElementsMatch(t, expected, Top10(textLowLength))
-		}
+		expected := []string{"привет", "один", "два", "три", "четыре", "пять"}
+		require.ElementsMatch(t, expected, Top10(textLowLength))
 	})
 
-	//t.Run("positive test additional", func(t *testing.T) {
-	//	if taskWithAsteriskIsCompleted {
-	//		expected := []string{"в", "который", "построил", "джек.", "которая", "а", "это", "темном", "чулане", "хранится", "доме"}
-	//		require.Subset(t, expected, Top10(textAdditional))
-	//	} else {
-	//		expected := []string{"Который", "построил", "Джек.", "Которая", "А", "это", "темном", "чулане", "хранится", "В", "доме,"}
-	//		require.ElementsMatch(t, expected, Top10(textAdditional))
-	//	}
-	//})
+	t.Run("positive test additional", func(t *testing.T) {
+		if taskWithAsteriskIsCompleted {
+			expected := []string{"в", "который", "построил", "джек.", "которая", "а", "это", "темном", "чулане", "хранится", "доме"}
+			require.Subset(t, expected, Top10(textAdditional))
+		} else {
+			expected := []string{"Который", "построил", "Джек.", "Которая", "А", "это", "темном", "чулане", "хранится", "В", "доме,"}
+			require.Subset(t, expected, Top10(textAdditional))
+		}
+	})
 }
