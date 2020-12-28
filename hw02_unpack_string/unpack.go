@@ -73,39 +73,58 @@ func (rI *runeIterator) defineRuneType() {
 
 type strStruct struct {
 	runeIterator
-	strBuilder strings.Builder
+	strings.Builder
 }
 
 var ErrInvalidString = errors.New("invalid string")
+var ErrUnpackString = errors.New("cannot unpack string")
 
 // Записывает символ в слайс строки.
-func (sS *strStruct) write() {
+func (sS *strStruct) write() error {
 	switch {
 	case sS.curType == symbolType:
-		sS.strBuilder.WriteRune(sS.curRune)
+		_, err := sS.WriteRune(sS.curRune)
+
+		if err != nil {
+			return err
+		}
 
 	case sS.prevType == escapeSymbolType:
 		if sS.curType == escapeSymbolType || sS.curType == symbolType || sS.curType == countType {
-			sS.strBuilder.WriteRune(sS.curRune)
+			_, err := sS.WriteRune(sS.curRune)
+
+			if err != nil {
+				return err
+			}
 			sS.curType = emptyType
 		}
 
 	case sS.curType == countType:
 		if sS.curRune == '0' {
-			subStr := getZeroCountStr(sS.strBuilder.String())
+			subStr := getZeroCountStr(sS.String())
 
-			sS.strBuilder.Reset()
-			sS.strBuilder.WriteString(subStr)
+			sS.Reset()
+			_, err := sS.WriteString(subStr)
+
+			if err != nil {
+				return err
+			}
 		} else {
 			count, _ := strconv.Atoi(string(sS.curRune))
 
 			// count - 1 чтобы учитывать уже имеющийся символ
-			sS.strBuilder.WriteString(strings.Repeat(string(sS.prevRune), count-1))
+			_, err := sS.WriteString(strings.Repeat(string(sS.prevRune), count-1))
+
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	sS.prevRune = sS.curRune
 	sS.prevType = sS.curType
+
+	return nil
 }
 
 func Unpack(str string) (string, error) {
@@ -128,10 +147,12 @@ func Unpack(str string) (string, error) {
 			return "", ErrInvalidString
 		}
 
-		sS.write()
+		if sS.write() != nil {
+			return "", ErrUnpackString
+		}
 	}
 
-	return sS.strBuilder.String(), nil
+	return sS.String(), nil
 }
 
 // getZeroCountStr возвращает подстроку без последнего символа.
