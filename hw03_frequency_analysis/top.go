@@ -17,7 +17,7 @@ func Top10(str string) []string {
 	words := make(map[string]int)
 	var sb strings.Builder
 
-	for _, r := range []rune(str) {
+	for _, r := range str {
 		if r == ' ' || r == '\n' || r == '\t' {
 			if sb.Len() > 0 {
 				words[sb.String()] = words[sb.String()] + 1
@@ -30,7 +30,7 @@ func Top10(str string) []string {
 
 	words[sb.String()] = words[sb.String()] + 1
 
-	var wordsSlice []wordStruct
+	wordsSlice := make([]wordStruct, 0, len(words))
 
 	for word, count := range words {
 		wordsSlice = append(wordsSlice, wordStruct{word, count})
@@ -40,7 +40,7 @@ func Top10(str string) []string {
 		return wordsSlice[i].count > wordsSlice[j].count
 	})
 
-	var top10 []string
+	top10 := make([]string, 0, len(words))
 	length := 10
 
 	if len(wordsSlice) < 10 {

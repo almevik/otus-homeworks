@@ -82,7 +82,7 @@ func TestTop10(t *testing.T) {
 			expected := []string{"в", "который", "построил", "джек.", "которая", "а", "это", "темном", "чулане", "хранится", "доме"}
 			require.Subset(t, expected, Top10(textAdditional))
 		} else {
-			expected := []string{"Который", "построил", "Джек.", "Которая", "А", "это", "темном", "чулане", "хранится", "В", "доме,"}
+			expected := []string{"Который", "построил", "Джек.", "Которая", "А", "это", "темном", "чулане", "хранится", "В", "в", "доме,"}
 			require.Subset(t, expected, Top10(textAdditional))
 		}
 	})
