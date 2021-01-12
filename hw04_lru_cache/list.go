@@ -22,7 +22,7 @@ type list struct {
 	len   int
 }
 
-// Если список пуст добавляем первое значение и ставим указатели первого и последнего элементов на него же
+// Если список пуст добавляем первое значение и ставим указатели первого и последнего элементов на него же.
 func (l *list) addFirst(lI *ListItem) {
 	l.first = lI
 	l.last = lI
@@ -87,7 +87,6 @@ func (l *list) Remove(i *ListItem) {
 
 	i = nil
 	l.len--
-	return
 }
 
 func (l *list) MoveToFront(i *ListItem) {

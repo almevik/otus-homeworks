@@ -18,7 +18,7 @@ type lruCache struct {
 	capacity int
 	queue    List
 	items    map[Key]*ListItem
-	mu *sync.Mutex // Для блокировки доступа
+	mu       *sync.Mutex // Для блокировки доступа
 }
 
 func (lC *lruCache) Set(key Key, value interface{}) bool {
@@ -89,7 +89,7 @@ func NewCache(capacity int) Cache {
 		capacity: capacity,
 		queue:    NewList(),
 		items:    map[Key]*ListItem{},
-		mu: &sync.Mutex{},
+		mu:       &sync.Mutex{},
 	}
 
 	return &lC
