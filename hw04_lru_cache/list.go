@@ -58,6 +58,7 @@ func (l *list) PushBack(v interface{}) {
 
 	if l.Len() == 0 {
 		l.addFirst(&lI)
+		return
 	}
 
 	lI.Prev, l.last, l.last.Next = l.last, &lI, &lI
