@@ -16,18 +16,18 @@ type cacheItem struct {
 
 type lruCache struct {
 	capacity int
-	sync.Mutex	// Для блокировки доступа
-	queue List
-	items map[Key]*ListItem
+	queue    List
+	items    map[Key]*ListItem
+	mu *sync.Mutex // Для блокировки доступа
 }
 
 func (lC *lruCache) Set(key Key, value interface{}) bool {
+	lC.mu.Lock()
+	defer lC.mu.Unlock()
+
 	if lC.capacity == 0 {
 		return false
 	}
-
-	lC.Lock()
-	defer lC.Unlock()
 
 	// Если элемент есть в словаре
 	if _, ok := lC.items[key]; ok {
@@ -38,6 +38,12 @@ func (lC *lruCache) Set(key Key, value interface{}) bool {
 		return true
 	}
 
+	// Если размер очереди больше емкости кэша, удалаяем последний элемент
+	if lC.queue.Len() >= lC.capacity {
+		delete(lC.items, lC.queue.Back().Value.(*cacheItem).key)
+		lC.queue.Remove(lC.queue.Back())
+	}
+
 	// Элемента нет в словаре
 	lC.queue.PushFront(&cacheItem{
 		key:   key,
@@ -45,23 +51,18 @@ func (lC *lruCache) Set(key Key, value interface{}) bool {
 	})
 	lC.items[key] = lC.queue.Front()
 
-	// Если размер очереди больше емкости кэша, удалаяем последний элемент
-	if lC.queue.Len() > lC.capacity {
-		lC.queue.Remove(lC.queue.Back())
-	}
-
 	return false
 }
 
 func (lC *lruCache) Get(key Key) (interface{}, bool) {
-	// Если элемент есть в словаре
-	if v, ok := lC.items[key]; ok {
-		lC.Lock()
-		defer lC.Unlock()
+	lC.mu.Lock()
+	defer lC.mu.Unlock()
 
-		lC.queue.MoveToFront(v)
-		v = lC.queue.Front()
-		return v.Value.(*cacheItem).value, ok
+	// Если элемент есть в словаре
+	if _, ok := lC.items[key]; ok {
+		lC.queue.MoveToFront(lC.items[key])
+		lC.items[key] = lC.queue.Front()
+		return lC.items[key].Value.(*cacheItem).value, ok
 	}
 
 	// Элемента нет в словаре
@@ -69,8 +70,8 @@ func (lC *lruCache) Get(key Key) (interface{}, bool) {
 }
 
 func (lC *lruCache) Clear() {
-	lC.Lock()
-	defer lC.Unlock()
+	lC.mu.Lock()
+	defer lC.mu.Unlock()
 
 	for lC.queue.Back() != nil {
 		delete(lC.items, lC.queue.Back().Value.(*cacheItem).key)
@@ -84,10 +85,11 @@ func NewCache(capacity int) Cache {
 		capacity = 0
 	}
 
-	lC := lruCache {
+	lC := lruCache{
 		capacity: capacity,
 		queue:    NewList(),
 		items:    map[Key]*ListItem{},
+		mu: &sync.Mutex{},
 	}
 
 	return &lC
