@@ -1,4 +1,5 @@
 package hw04_lru_cache //nolint:golint,stylecheck
+
 import (
 	"errors"
 	"sync"
@@ -20,7 +21,7 @@ type cacheItem struct {
 type lruCache struct {
 	capacity int
 	List
-	items map[Key]*listItem
+	items       map[Key]*listItem
 	*sync.Mutex // Для блокировки доступа
 }
 
@@ -78,7 +79,7 @@ func (lC *lruCache) Clear() {
 
 func NewCache(capacity int) (Cache, error) {
 	if capacity < 1 {
-		return nil, errors.New("Capacity < 1")
+		return nil, errors.New("capacity < 1")
 	}
 
 	lC := lruCache{
