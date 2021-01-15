@@ -2,38 +2,38 @@ package hw04_lru_cache //nolint:golint,stylecheck
 
 type List interface {
 	Len() int
-	Front() *ListItem
-	Back() *ListItem
+	Front() *listItem
+	Back() *listItem
 	PushFront(v interface{})
 	PushBack(v interface{})
-	Remove(i *ListItem)      // удалить элемент
-	MoveToFront(i *ListItem) // переместить элемент в начало
+	Remove(i *listItem)      // удалить элемент
+	MoveToFront(i *listItem) // переместить элемент в начало
 }
 
-type ListItem struct {
+type listItem struct {
 	Value interface{} // значение
-	Next  *ListItem   // следующий элемент
-	Prev  *ListItem   // предыдущий элемент
+	Next  *listItem   // следующий элемент
+	Prev  *listItem   // предыдущий элемент
 }
 
 type list struct {
-	first *ListItem
-	last  *ListItem
+	first *listItem
+	last  *listItem
 	len   int
 }
 
 // Если список пуст добавляем первое значение и ставим указатели первого и последнего элементов на него же.
-func (l *list) addFirst(lI *ListItem) {
+func (l *list) addFirst(lI *listItem) {
 	l.first = lI
 	l.last = lI
 	l.len++
 }
 
-func (l *list) Front() *ListItem {
+func (l *list) Front() *listItem {
 	return l.first
 }
 
-func (l *list) Back() *ListItem {
+func (l *list) Back() *listItem {
 	return l.last
 }
 
@@ -42,30 +42,32 @@ func (l *list) Len() int {
 }
 
 func (l *list) PushFront(v interface{}) {
-	lI := ListItem{v, nil, nil}
+	lI := &listItem{v, nil, nil}
 
 	if l.Len() == 0 {
-		l.addFirst(&lI)
+		l.addFirst(lI)
 		return
 	}
 
-	lI.Next, l.first, l.first.Prev = l.first, &lI, &lI
+	lI.Next = l.first
+	l.first, l.first.Prev = lI, lI
 	l.len++
 }
 
 func (l *list) PushBack(v interface{}) {
-	lI := ListItem{v, nil, nil}
+	lI := &listItem{v, nil, nil}
 
 	if l.Len() == 0 {
-		l.addFirst(&lI)
+		l.addFirst(lI)
 		return
 	}
 
-	lI.Prev, l.last, l.last.Next = l.last, &lI, &lI
+	lI.Prev = l.last
+	l.last, l.last.Next = lI, lI
 	l.len++
 }
 
-func (l *list) Remove(i *ListItem) {
+func (l *list) Remove(i *listItem) {
 	// Если элемент один или список пуст, то просто обнуляем список
 	if l.len <= 1 {
 		l.first = nil
@@ -76,9 +78,11 @@ func (l *list) Remove(i *ListItem) {
 
 	switch i {
 	case l.first:
-		l.first, l.first.Next.Prev = l.first.Next, nil
+		l.first.Next.Prev = nil
+		l.first = l.first.Next
 	case l.last:
-		l.last, l.last.Prev.Next = l.last.Prev, nil
+		l.last.Prev.Next = nil
+		l.last = l.last.Prev
 	default:
 		// Нам известно куда указывает каждый элемент
 		i.Next.Prev = i.Prev
@@ -89,7 +93,7 @@ func (l *list) Remove(i *ListItem) {
 	l.len--
 }
 
-func (l *list) MoveToFront(i *ListItem) {
+func (l *list) MoveToFront(i *listItem) {
 	switch i {
 	case l.first:
 		return
@@ -104,7 +108,8 @@ func (l *list) MoveToFront(i *ListItem) {
 	}
 
 	// Меняем указатель первого элемента на текущий и делаем первым текущий
-	i.Next, l.first, l.first.Prev = l.first, i, i
+	i.Next = l.first
+	l.first, l.first.Prev = i, i
 	i.Prev = nil
 }
 

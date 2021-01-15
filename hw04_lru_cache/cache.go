@@ -1,5 +1,8 @@
 package hw04_lru_cache //nolint:golint,stylecheck
-import "sync"
+import (
+	"errors"
+	"sync"
+)
 
 type Key string
 
@@ -16,52 +19,48 @@ type cacheItem struct {
 
 type lruCache struct {
 	capacity int
-	queue    List
-	items    map[Key]*ListItem
-	mu       *sync.Mutex // Для блокировки доступа
+	List
+	items map[Key]*listItem
+	*sync.Mutex // Для блокировки доступа
 }
 
 func (lC *lruCache) Set(key Key, value interface{}) bool {
-	lC.mu.Lock()
-	defer lC.mu.Unlock()
-
-	if lC.capacity == 0 {
-		return false
-	}
+	lC.Lock()
+	defer lC.Unlock()
 
 	// Если элемент есть в словаре
 	if _, ok := lC.items[key]; ok {
 		lC.items[key].Value.(*cacheItem).value = value
 
-		lC.queue.MoveToFront(lC.items[key])
-		lC.items[key] = lC.queue.Front()
+		lC.MoveToFront(lC.items[key])
+		lC.items[key] = lC.Front()
 		return true
 	}
 
 	// Если размер очереди больше емкости кэша, удалаяем последний элемент
-	if lC.queue.Len() >= lC.capacity {
-		delete(lC.items, lC.queue.Back().Value.(*cacheItem).key)
-		lC.queue.Remove(lC.queue.Back())
+	if lC.Len() >= lC.capacity {
+		delete(lC.items, lC.Back().Value.(*cacheItem).key)
+		lC.Remove(lC.Back())
 	}
 
 	// Элемента нет в словаре
-	lC.queue.PushFront(&cacheItem{
+	lC.PushFront(&cacheItem{
 		key:   key,
 		value: value,
 	})
-	lC.items[key] = lC.queue.Front()
+	lC.items[key] = lC.Front()
 
 	return false
 }
 
 func (lC *lruCache) Get(key Key) (interface{}, bool) {
-	lC.mu.Lock()
-	defer lC.mu.Unlock()
+	lC.Lock()
+	defer lC.Unlock()
 
 	// Если элемент есть в словаре
 	if _, ok := lC.items[key]; ok {
-		lC.queue.MoveToFront(lC.items[key])
-		lC.items[key] = lC.queue.Front()
+		lC.MoveToFront(lC.items[key])
+		lC.items[key] = lC.Front()
 		return lC.items[key].Value.(*cacheItem).value, ok
 	}
 
@@ -70,27 +69,24 @@ func (lC *lruCache) Get(key Key) (interface{}, bool) {
 }
 
 func (lC *lruCache) Clear() {
-	lC.mu.Lock()
-	defer lC.mu.Unlock()
+	lC.Lock()
+	defer lC.Unlock()
 
-	for lC.queue.Back() != nil {
-		delete(lC.items, lC.queue.Back().Value.(*cacheItem).key)
-		lC.queue.Remove(lC.queue.Back())
-	}
+	lC.List = NewList()
+	lC.items = make(map[Key]*listItem, lC.capacity)
 }
 
-func NewCache(capacity int) Cache {
-	// Если глубина отрицательная, делаем ее равной 0
-	if capacity < 0 {
-		capacity = 0
+func NewCache(capacity int) (Cache, error) {
+	if capacity < 1 {
+		return nil, errors.New("Capacity < 1")
 	}
 
 	lC := lruCache{
 		capacity: capacity,
-		queue:    NewList(),
-		items:    map[Key]*ListItem{},
-		mu:       &sync.Mutex{},
+		List:     NewList(),
+		items:    make(map[Key]*listItem, capacity),
+		Mutex:    &sync.Mutex{},
 	}
 
-	return &lC
+	return &lC, nil
 }

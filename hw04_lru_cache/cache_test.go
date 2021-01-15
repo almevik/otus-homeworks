@@ -10,8 +10,17 @@ import (
 )
 
 func TestCache(t *testing.T) {
+	t.Run("zero cache", func(t *testing.T) {
+		c, err := NewCache(0)
+
+		require.Nil(t, c)
+		require.Error(t, err)
+	})
+
 	t.Run("empty cache", func(t *testing.T) {
-		c := NewCache(10)
+		c, err := NewCache(10)
+
+		require.Nil(t, err)
 
 		_, ok := c.Get("aaa")
 		require.False(t, ok)
@@ -21,7 +30,9 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("simple", func(t *testing.T) {
-		c := NewCache(5)
+		c, err := NewCache(5)
+
+		require.Nil(t, err)
 
 		wasInCache := c.Set("aaa", 100)
 		require.False(t, wasInCache)
@@ -50,7 +61,9 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge logic", func(t *testing.T) {
-		c := NewCache(3)
+		c, err := NewCache(3)
+
+		require.Nil(t, err)
 
 		for i := 0; i <= 5; i++ {
 			c.Set(Key(strconv.Itoa(i)), i)
@@ -82,7 +95,9 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge rare logic", func(t *testing.T) {
-		c := NewCache(3)
+		c, err := NewCache(3)
+
+		require.Nil(t, err)
 
 		for i := 0; i < 3; i++ {
 			c.Set(Key(strconv.Itoa(i)), i)
@@ -118,7 +133,10 @@ func TestCache(t *testing.T) {
 }
 
 func TestCacheMultithreading(t *testing.T) {
-	c := NewCache(10)
+	c, err := NewCache(10)
+
+	require.Nil(t, err)
+
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 
