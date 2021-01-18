@@ -48,4 +48,33 @@ func TestList(t *testing.T) {
 		}
 		require.Equal(t, []int{70, 80, 60, 40, 10, 30, 50}, elems)
 	})
+
+	// Удаление большего кол-ва элементов, чем длина списка
+	t.Run("clear list", func(t *testing.T) {
+		l := NewList()
+
+		l.PushFront(10)
+		l.PushFront(20)
+		l.PushFront(30)
+		require.Equal(t, 3, l.Len())
+
+		for i := 0; i < 5; i++ {
+			l.Remove(l.Back())
+		}
+		require.Equal(t, 0, l.Len())
+		require.Nil(t, l.Front())
+		require.Nil(t, l.Back())
+
+		l.PushBack(10)
+		l.PushBack(20)
+		l.PushBack(30)
+		require.Equal(t, 3, l.Len())
+
+		for i := 0; i < 5; i++ {
+			l.Remove(l.Front())
+		}
+		require.Equal(t, 0, l.Len())
+		require.Nil(t, l.Front())
+		require.Nil(t, l.Back())
+	})
 }

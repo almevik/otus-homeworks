@@ -10,8 +10,17 @@ import (
 )
 
 func TestCache(t *testing.T) {
+	t.Run("zero cache", func(t *testing.T) {
+		c, err := NewCache(0)
+
+		require.Nil(t, c)
+		require.Error(t, err)
+	})
+
 	t.Run("empty cache", func(t *testing.T) {
-		c := NewCache(10)
+		c, err := NewCache(10)
+
+		require.Nil(t, err)
 
 		_, ok := c.Get("aaa")
 		require.False(t, ok)
@@ -21,7 +30,9 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("simple", func(t *testing.T) {
-		c := NewCache(5)
+		c, err := NewCache(5)
+
+		require.Nil(t, err)
 
 		wasInCache := c.Set("aaa", 100)
 		require.False(t, wasInCache)
@@ -50,14 +61,82 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+		c, err := NewCache(3)
+
+		require.Nil(t, err)
+
+		for i := 0; i <= 5; i++ {
+			c.Set(Key(strconv.Itoa(i)), i)
+		}
+
+		val, ok := c.Get("0")
+		require.False(t, ok)
+		require.Equal(t, nil, val)
+
+		val, ok = c.Get("1")
+		require.False(t, ok)
+		require.Equal(t, nil, val)
+
+		val, ok = c.Get("2")
+		require.False(t, ok)
+		require.Equal(t, nil, val)
+
+		val, ok = c.Get("3")
+		require.True(t, ok)
+		require.Equal(t, 3, val)
+
+		val, ok = c.Get("4")
+		require.True(t, ok)
+		require.Equal(t, 4, val)
+
+		val, ok = c.Get("5")
+		require.True(t, ok)
+		require.Equal(t, 5, val)
+	})
+
+	t.Run("purge rare logic", func(t *testing.T) {
+		c, err := NewCache(3)
+
+		require.Nil(t, err)
+
+		for i := 0; i < 3; i++ {
+			c.Set(Key(strconv.Itoa(i)), i)
+		}
+
+		val, ok := c.Get("0")
+		require.True(t, ok)
+		require.Equal(t, 0, val)
+
+		val, ok = c.Get("1")
+		require.True(t, ok)
+		require.Equal(t, 1, val)
+
+		val, ok = c.Get("1")
+		require.True(t, ok)
+		require.Equal(t, 1, val)
+
+		wasInCache := c.Set("3", 3)
+		require.False(t, wasInCache)
+
+		val, ok = c.Get("0")
+		require.True(t, ok)
+		require.Equal(t, 0, val)
+
+		val, ok = c.Get("1")
+		require.True(t, ok)
+		require.Equal(t, 1, val)
+
+		val, ok = c.Get("3")
+		require.True(t, ok)
+		require.Equal(t, 3, val)
 	})
 }
 
 func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // NeedRemove if task with asterisk completed
+	c, err := NewCache(10)
 
-	c := NewCache(10)
+	require.Nil(t, err)
+
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 
