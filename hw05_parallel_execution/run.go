@@ -23,14 +23,14 @@ func worker(tasks <-chan Task, errors chan error) {
 	}
 }
 
-// Run starts tasks in N goroutines and stops its work when receiving M errors from tasks
-func Run(tasks []Task, N int, M int) error {
-	if N <= 0 || len(tasks) == 0 {
+// Run starts tasks in N goroutines and stops its work when receiving M errors from tasks.
+func Run(tasks []Task, n int, m int) error {
+	if n <= 0 || len(tasks) == 0 {
 		return nil
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(N)
+	wg.Add(n)
 
 	tCh := make(chan Task, len(tasks))
 
@@ -40,9 +40,9 @@ func Run(tasks []Task, N int, M int) error {
 
 	close(tCh)
 
-	errCh := make(chan error, M)
+	errCh := make(chan error, m)
 
-	for i := 0; i < N; i++ {
+	for i := 0; i < n; i++ {
 		go func() {
 			defer wg.Done()
 			worker(tCh, errCh)
@@ -52,10 +52,9 @@ func Run(tasks []Task, N int, M int) error {
 	wg.Wait()
 	close(errCh)
 
-	if len(errCh) == M {
+	if len(errCh) == m {
 		return ErrErrorsLimitExceeded
 	}
 
 	return nil
 }
-
